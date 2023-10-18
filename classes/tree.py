@@ -68,8 +68,8 @@ class Tree():
             self.show_code_tree(node.esq)
         if node.dir != 0:
             self.show_code_tree(node.dir)
-        if node.dir == 0 and node.esq == 0:
-            print("encontrei folha")
+        if node.r > -1:
+            print("encontrei valor")
             print("codigo:" + str(node.code) + "cor: "+str(node.r)+", "+str(node.g)+", "+str(node.b))
 
     def criar_caminho(self, node):
@@ -77,7 +77,7 @@ class Tree():
             self.criar_caminho(node.esq)
         if node.dir != 0:
             self.criar_caminho(node.dir)
-        if node.dir == 0 and node.esq == 0:
+        if node.r > -1:
             codigo = []
             node_atual = node
             node_father = node.father
@@ -90,6 +90,61 @@ class Tree():
                 node_father = node_father.father
             codigo.reverse()
             node.code = codigo
+
+    def return_code(self,node, r,g,b):
+        node_return = 0
+        if node.esq != 0:
+            node_return = self.return_code(node.esq,r,g,b)
+            if node_return != 0:
+                return node_return
+        if node.dir != 0:
+            node_return = self.return_code(node.dir,r,g,b)
+            if node_return != 0:
+                return node_return
+        if node.r > -1:
+            if node.r == r and node.g == g and node.b == b:
+                node_return = node
+                return node_return
+        return 0
+    
+    def reform_tree(self, node):
+        if node.esq != 0:
+            self.reform_tree(node.esq)
+        if node.dir != 0:
+            self.reform_tree(node.dir)
+        if node.r > -1:
+            if node.is_father == False:
+                if node.father.r == -1:
+                    node.father.r = node.r
+                    node.father.g = node.g
+                    node.father.b = node.b
+                    node.father.quant = node.quant
+                    node.r = -1
+                    node.g = -1
+                    node.b = -1
+                    node.quant = 0
+                elif node.father.r > -1:
+                    if node.father.quant < node.quant:
+                        tempr = node.father.r
+                        tempg = node.father.g
+                        tempb = node.father.b
+                        tempq = node.father.quant
+                        node.father.r = node.r
+                        node.father.g = node.g
+                        node.father.b = node.b
+                        node.father.quant = node.quant
+                        node.r = tempr
+                        node.g = tempg
+                        node.b = tempb
+                        node.quant = tempq
+                    else:
+                        print(str(node.father.quant)+" > "+str(node.quant))
+
+                    
+
+
+
+
             
 
 
