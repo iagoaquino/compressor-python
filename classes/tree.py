@@ -2,6 +2,7 @@ class Node:
     def __init__(self):
         self.quant = 0
         self.is_father = False
+        self.weight_set = 0
         self.father = 0
         self.esq = 0
         self.dir = 0
@@ -91,54 +92,42 @@ class Tree():
             codigo.reverse()
             node.code = codigo
 
-    def return_code(self,node, r,g,b):
+    def return_code(self,node, r,g,b, lose_rate):
         node_return = 0
         if node.esq != 0:
-            node_return = self.return_code(node.esq,r,g,b)
+            node_return = self.return_code(node.esq,r,g,b,lose_rate)
             if node_return != 0:
                 return node_return
         if node.dir != 0:
-            node_return = self.return_code(node.dir,r,g,b)
+            node_return = self.return_code(node.dir,r,g,b,lose_rate)
             if node_return != 0:
                 return node_return
         if node.r > -1:
-            if node.r == r and node.g == g and node.b == b:
+            distancia_r = (node.r - r) ** 2
+            distancia_g = (node.g - g) ** 2
+            distancia_b = (node.b - b) ** 2
+            if (distancia_r + distancia_g + distancia_b) < lose_rate**2:
                 node_return = node
                 return node_return
         return 0
     
-    def reform_tree(self, node):
+            
+    def return_overweight_codes(self,node,r,g,b):
+        node_return = 0
         if node.esq != 0:
-            self.reform_tree(node.esq)
+            node_return = self.return_overweight_codes(node.esq,r,g,b)
+            if node_return != 0:
+                return node_return
         if node.dir != 0:
-            self.reform_tree(node.dir)
+            node_return = self.return_overweight_codes(node.dir,r,g,b)
+            if node_return != 0:
+                return node_return
         if node.r > -1:
-            if node.is_father == False:
-                if node.father.r == -1:
-                    node.father.r = node.r
-                    node.father.g = node.g
-                    node.father.b = node.b
-                    node.father.quant = node.quant
-                    node.r = -1
-                    node.g = -1
-                    node.b = -1
-                    node.quant = 0
-                elif node.father.r > -1:
-                    if node.father.quant < node.quant:
-                        tempr = node.father.r
-                        tempg = node.father.g
-                        tempb = node.father.b
-                        tempq = node.father.quant
-                        node.father.r = node.r
-                        node.father.g = node.g
-                        node.father.b = node.b
-                        node.father.quant = node.quant
-                        node.r = tempr
-                        node.g = tempg
-                        node.b = tempb
-                        node.quant = tempq
-                    else:
-                        print(str(node.father.quant)+" > "+str(node.quant))
+            if node.r == r and node.g == g and node.b == b and len(node.code) >= 6:
+                node_return = node
+                return node_return
+        return 0
+
 
                     
 
