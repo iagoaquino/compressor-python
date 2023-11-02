@@ -24,13 +24,14 @@ def ler_file_pt_1(image, lose_rate, queue_main, block_width, block_height):
                         node.b = b
                         exist = False
                         for value in queue_intern:
-                            if exist != True:
+                            if not exist:
                                 distancia_r = (value.r - node.r) ** 2
                                 distancia_g = (value.g - node.g) ** 2
                                 distancia_b = (value.b - node.b) ** 2
                                 if (distancia_r + distancia_g + distancia_b) < lose_rate**2:
                                     value.quant += 1
                                     exist = True
+                                    break
                         if not exist:
                             queue_intern.append(node)
                     elif image.mode == "RGBA":
@@ -150,15 +151,30 @@ def merge_sort(arr):
             j += 1
             k += 1
 
-def get_codes(tree, binarys, image, lose_rate, mod_x, mod_y, block_width, block_heigh):
-    for i in range(int(image.width/block_width)):
-        for j in range(int(image.height/block_heigh)):
-            if image.mode == "RGB":
-                r, g, b = image.getpixel((i+mod_x*int(image.width/block_width),j+mod_y*int(image.height/block_heigh)))
-                binarys.append(tree.return_code(tree.root, r,g,b,lose_rate).code)
-            elif image.mode == "RGB":
-                r, g, b, a  = image.getpixel((i,j))
-                binarys.append(tree.return_code(tree.root, r,g,b,lose_rate).code)
+def get_codes(tree,queue_backup, cont,  binarys, image, lose_rate, mod_x, mod_y, block_width, block_heigh):
+    if len(queue_backup[cont]) > 1:
+        for i in range(int(image.width/block_width)):
+            for j in range(int(image.height/block_heigh)):
+                if image.mode == "RGB":
+                    r, g, b = image.getpixel((i+mod_x*int(image.width/block_width),j+mod_y*int(image.height/block_heigh)))
+                    binarys.append(tree.return_code(tree.root, r,g,b,lose_rate).code)
+                elif image.mode == "RGB":
+                    r, g, b, a  = image.getpixel((i,j))
+                    binarys.append(tree.return_code(tree.root, r,g,b,lose_rate).code)
+    else:
+        r, g, b = image.getpixel((0+mod_x*int(image.width/block_width),0+mod_y*int(image.height/block_heigh)))
+        node = tree.return_code(tree.root, r,g,b,lose_rate)
+        code = node.code
+        quant_repeat = format(node.quant + 1, "b")
+        quant_repeat_bit = []
+        for i in quant_repeat:
+            quant_repeat_bit.append(i)
+        quant_repeat_bit.reverse()
+        for i in range(len(quant_repeat_bit)):
+            binarys.append(quant_repeat_bit[i])
+        binarys.append(code)
+
+
             
 def create_queue_backup(queue_main, id):
     check = open("checkup/check_num_"+str(id)+".txt","w")
@@ -174,7 +190,7 @@ def create_queue_backup(queue_main, id):
     check.close()
     return queue_backup
 
-def write_bytes(file, tamanho, image, binarys, queue_backup, block_width, block_height):
+def write_bytes(file, tamanho, image, binarys, copy_queue,queue_order, block_width, block_height):
     size_bin = int(image.width).to_bytes(2, byteorder="little",signed=False)
     file.write(size_bin)
     size_bin = int(image.height).to_bytes(2, byteorder="little",signed=False)
@@ -183,11 +199,13 @@ def write_bytes(file, tamanho, image, binarys, queue_backup, block_width, block_
     file.write(size_bin)
     size_bin = int(block_height).to_bytes(2, byteorder="little",signed=False)
     file.write(size_bin)
-    for i in range(len(queue_backup)):
+    size_bin = int(len(copy_queue)).to_bytes(2, byteorder="little",signed=False)
+    file.write(size_bin)
+    for i in range(len(copy_queue)):
         size_bin = tamanho[i].to_bytes(2,byteorder="little", signed=False)
         file.write(size_bin)
-        for j in range(len(queue_backup[i])):
-            node = queue_backup[i][j]
+        for j in range(len(copy_queue[i])):
+            node = copy_queue[i][j]
             size_bin = node.r.to_bytes(1,byteorder="little", signed=False)
             file.write(size_bin)
             size_bin = node.g.to_bytes(1,byteorder="little", signed=False)
@@ -196,7 +214,9 @@ def write_bytes(file, tamanho, image, binarys, queue_backup, block_width, block_
             file.write(size_bin)
             size_bin = node.quant.to_bytes(3,byteorder="little", signed=False)
             file.write(size_bin)
-
+    for i in queue_order:
+        pos = i.to_bytes(2,byteorder="little", signed=False)
+        file.write(pos)
     bin = 0
     one = 1
     cont = 0
@@ -222,8 +242,8 @@ def write_bytes(file, tamanho, image, binarys, queue_backup, block_width, block_
         file.write(bin.to_bytes(1,byteorder="little", signed=False))
         binary_made = bin.to_bytes(1,byteorder="little", signed=False)
         binary_made = format(int.from_bytes(binary_made,byteorder="little", signed=False),"b")
-        print(binary_made)
     file.close()
+
 def show_divisor(number):
     divisor = ""
     for i in range(number//2 + 1):
@@ -231,16 +251,29 @@ def show_divisor(number):
             divisor += str(i+1) + " "
     print(divisor)
 
+def comparar_listas(lista_1, lista_2):
+    if len(lista_1) != len(lista_2):
+        return False
+    else:
+        achou_diferença = False
+        for i in range(len(lista_1)):
+            if lista_1[i].r != lista_2[i].r or lista_1[i].g != lista_2[i].g or lista_1[i].b != lista_2[i].b or lista_1[i].quant != lista_2[i].quant:
+                achou_diferença = True
+        if achou_diferença:
+            return False
+        else:
+            return True
+        
 def main():
     file = open("output.wi", "wb")
     image = Image.open("benchmark.bmp")
     tree = []
     queue_main = []
+    copy_queue = []
     queue_backup = []
     binarys = []
+    queue_order = []
     lose_rate = int(input("entre com a taxa de perda"))
-    print(int(image.width/64))
-    print(int(image.height/64))
     show_divisor(image.width)
     block_width = int(input("digite a largura do bloco"))
     show_divisor(image.height)
@@ -252,24 +285,54 @@ def main():
         queue_backup.append(create_queue_backup(queue_main[i], cont))
         tree.append(create_tree(queue_main[i]))
         cont+=1
+    cont_teste = 0
+    for i in queue_backup:
+        cont_teste+=1
+        if len(copy_queue) == 0:
+            copy_queue.append(i)
+        else:
+            exist = False
+            for j in copy_queue:
+                already_exist = comparar_listas(i, j)
+                if already_exist:
+                    exist = True
+                    break
+            if not exist:
+                copy_queue.append(i)
+        print(cont_teste)
+    
+    checkup_copy_tree = open("checkup/checkup_copy_queue.txt", "w")
+
+    for i in range(len(copy_queue)):
+        checkup_copy_tree.write(str(i)+"\n")
+        for j in range(len(copy_queue[i])):
+            checkup_copy_tree.write("rgb("+str(copy_queue[i][j].r)+", "+str(copy_queue[i][j].g) + ", "+ str(copy_queue[i][j].b) + ", "+str(copy_queue[i][j].quant)+")\n")
+
+    checkup_copy_tree.close()
+    for i in range(len(queue_backup)):
+        for j in range(len(copy_queue)):
+            found = comparar_listas(queue_backup[i], copy_queue[j])
+            if found:
+                queue_order.append(j)
+                break
+    print(queue_order)
+    print(len(queue_order))
+
     for i in range(len(tree)):
         tree[i].criar_caminho(tree[i].root)
     cont = 0
+
     for j in range(block_width):
         for k in range(block_heigh):
-            get_codes(tree[cont], binarys, image, lose_rate, j, k, block_width, block_heigh)
+            get_codes(tree[cont],queue_backup, cont, binarys, image, lose_rate, j, k, block_width, block_heigh)
             cont+=1
-    print(binarys)
     tamanho = []
-    for value in queue_backup:
+    for value in copy_queue:
         tamanho.append(len(value))
-    print(tamanho)
-    print(image.width)
-    print(image.height)
-    write_bytes(file, tamanho, image,binarys, queue_backup, block_width, block_heigh)
+    write_bytes(file, tamanho, image,binarys, copy_queue, queue_order, block_width, block_heigh)
 main()
 
-
+#143 776
 
 
 
