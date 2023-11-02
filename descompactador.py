@@ -169,23 +169,12 @@ def show_bits():
 
         
 
-def get_pixels(tree, width, heigh):
+def get_pixels(tree, width, heigh, block_width, block_height):
     node = tree.root
     cont = 0
     if tree.root.esq.r > -1 and tree.root.dir == 0:
-        repeat_complete = 0
-        repeat_part_1 = 0
-        for i in range(8):
-            if chain.head.value == "0":
-                repeat_part_1 = repeat_part_1 >> 1
-                chain.head = chain.head.esq
-                chain.size -= 1
-            elif chain.head.value == "1":
-                repeat_part_1 = repeat_part_1 >> 1
-                repeat_part_1 = repeat_part_1 | 128
-                chain.head = chain.head.esq
-                chain.size -= 1
-        repeat_complete = repeat_part_1
+        chain.head = chain.head.esq
+        repeat_complete = int(width/block_width) * int(heigh/block_height)
         for i in range(repeat_complete):
             cores = []
             cores.append(tree.root.esq.r)
@@ -254,7 +243,6 @@ def reconstruct_image(width, height, block_width, block_height):
         for j in range(block_height):
             for k in range(int(width/block_width)):
                 for l in range(int(height/block_height)):
-                    print("size:"+str(len(pixels))+" atual:"+str(cont))
                     image.putpixel((k+i*int(width/block_width),l+j*int(height/block_height)), (pixels[cont][0],pixels[cont][1],pixels[cont][2]))
                     if cont < len(pixels)-1:
                         cont+=1
@@ -268,9 +256,8 @@ for queue in queue_main:
 for tree in trees:
     tree.criar_caminho(tree.root)
 get_bits()
-show_bits()
 for i in range(block_width*block_height):
-    get_pixels(trees[i], width, height)
+    get_pixels(trees[i], width, height, block_width, block_height)
 reconstruct_image(width,height, block_width, block_height)
 
 
