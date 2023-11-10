@@ -196,7 +196,7 @@ def write_bytes(file, tamanho, image, binarys, copy_queue,queue_order, block_wid
             file.write(size_bin)
             size_bin = node.b.to_bytes(1,byteorder="little", signed=False)
             file.write(size_bin)
-            size_bin = node.quant.to_bytes(3,byteorder="little", signed=False)
+            size_bin = node.quant.to_bytes(2,byteorder="little", signed=False)
             file.write(size_bin)
     for i in queue_order:
         pos = i.to_bytes(2,byteorder="little", signed=False)
@@ -249,8 +249,11 @@ def comparar_listas(lista_1, lista_2):
             return True
         
 def main():
-    file = open("output.wi", "wb")
-    image = Image.open("benchmark.bmp")
+    entrada = input("digite o nome da imagem de entrada sem a extensão: ")
+    extensao = input("digite a extensão: ")
+    saida = input("digite o nome do arquivo de saida sem a extensão (.wi): ")
+    file = open(saida+".wi", "wb")
+    image = Image.open(entrada+"."+extensao)
     tree = []
     queue_main = []
     copy_queue = []
@@ -304,6 +307,7 @@ def main():
     for value in copy_queue:
         tamanho.append(len(value))
     print("compactando")
+    print(len(tamanho))
     write_bytes(file, tamanho, image,binarys, copy_queue, queue_order, block_width, block_heigh)
 main()
 

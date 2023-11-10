@@ -4,13 +4,7 @@ from classes.tree import Tree
 from classes.chain import Chain
 from classes.chain import Block
 import sys
-file = open("output.wi","rb")
 sys.setrecursionlimit(1000)
-tree = Tree()
-queue_main = []
-valores = []
-bits = []
-pixels = []
 chain = Chain()
 chain_bytes = Chain()
 
@@ -64,9 +58,9 @@ def reconstruct_queue(block_width, block_height, size_copy_queue):
             chain_bytes.head = chain_bytes.head.dir
             node.b = chain_bytes.head.value
             chain_bytes.head = chain_bytes.head.dir
-            node.quant = chain_bytes.head.value + (chain_bytes.head.dir.value << 8) + (chain_bytes.head.dir.dir.value << 16)
-            chain_bytes.head = chain_bytes.head.dir.dir.dir
-            chain_bytes.size -= 6
+            node.quant = chain_bytes.head.value + (chain_bytes.head.dir.value << 8)
+            chain_bytes.head = chain_bytes.head.dir.dir
+            chain_bytes.size -= 5
             queue_intern_base.append(node)
         queue_base.append(queue_intern_base)
     for i in range(block_width*block_height):
@@ -169,7 +163,7 @@ def show_bits():
 
         
 
-def get_pixels(tree, width, heigh, block_width, block_height):
+def get_pixels(pixels, tree, width, heigh, block_width, block_height):
     node = tree.root
     cont = 0
     if tree.root.esq.r > -1 and tree.root.dir == 0:
@@ -236,7 +230,7 @@ def merge_sort(arr):
             j += 1
             k += 1
 
-def reconstruct_image(width, height, block_width, block_height):
+def reconstruct_image(width, height, block_width, block_height, pixels, saida):
     image = Image.new("RGB",(width,height), (255,255,255))
     cont = 0
     for i in range(block_width):
@@ -246,20 +240,24 @@ def reconstruct_image(width, height, block_width, block_height):
                     image.putpixel((k+i*int(width/block_width),l+j*int(height/block_height)), (pixels[cont][0],pixels[cont][1],pixels[cont][2]))
                     if cont < len(pixels)-1:
                         cont+=1
-    image.save("descompressed.bmp")
+    image.save(saida+".bmp")
+def main():
+    entrada = input("digite o nome do arquivo de entrada sem a extensão (.wi): ")
+    saida = input("digite o nome do arquivo de saida: ")
+    file = open(entrada+".wi", "rb")
+    width, height, block_width, block_height, size_copy_queue = get_mesure(file)
+    trees = []
+    queue_main = reconstruct_queue(block_width, block_height, size_copy_queue)
+    for queue in queue_main:
+        trees.append(create_tree(queue))
+    for tree in trees:
+        tree.criar_caminho(tree.root)
+    get_bits()
+    pixels = []
+    for i in range(block_width*block_height):
+        get_pixels(pixels, trees[i], width, height, block_width, block_height)
+    reconstruct_image(width,height, block_width, block_height, pixels, saida)
 
-width, height, block_width, block_height, size_copy_queue  = get_mesure(file)
-trees = []
-queue_main = reconstruct_queue(block_width, block_height, size_copy_queue)
-for queue in queue_main:
-    trees.append(create_tree(queue))
-for tree in trees:
-    tree.criar_caminho(tree.root)
-get_bits()
-for i in range(block_width*block_height):
-    get_pixels(trees[i], width, height, block_width, block_height)
-reconstruct_image(width,height, block_width, block_height)
-
-
+main()
 
 
