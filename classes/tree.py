@@ -106,7 +106,7 @@ class Tree():
             distancia_r = (node.r - r) ** 2
             distancia_g = (node.g - g) ** 2
             distancia_b = (node.b - b) ** 2
-            if (distancia_r + distancia_g + distancia_b) < lose_rate**2:
+            if (distancia_r + distancia_g + distancia_b) <= lose_rate**2:
                 node_return = node
                 return node_return
         return 0
