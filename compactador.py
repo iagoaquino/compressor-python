@@ -26,25 +26,30 @@ def ler_file_pt_1(image, lose_rate, queue_main, block_width, block_height):
                                 distancia_r = (value.r - node.r) ** 2
                                 distancia_g = (value.g - node.g) ** 2
                                 distancia_b = (value.b - node.b) ** 2
-                                if (distancia_r + distancia_g + distancia_b) < lose_rate**2:
+                                if (distancia_r + distancia_g + distancia_b) <= lose_rate**2:
                                     value.quant += 1
                                     exist = True
                                     break
                         if not exist:
                             queue_intern.append(node)
                     elif image.mode == "RGBA":
-                        r,g,b,a = image.getpixel((i,j))
+                        r,g,b,a = image.getpixel((k+i*int(image.width/block_width),l+j*int(image.height/block_height)))
                         node = Node()
                         node.r = r
                         node.g = g
                         node.b = b
                         exist = False
-                        for value in queue_main:
-                            if value.r == node.r and value.g == node.g and value.b == value.b:
-                                value.quant += 1
-                                exist = True
+                        for value in queue_intern:
+                            if not exist:
+                                distancia_r = (value.r - node.r) ** 2
+                                distancia_g = (value.g - node.g) ** 2
+                                distancia_b = (value.b - node.b) ** 2
+                                if (distancia_r + distancia_g + distancia_b) < lose_rate**2:
+                                    value.quant += 1
+                                    exist = True
+                                    break
                         if not exist:
-                            queue_main.append(node)
+                            queue_intern.append(node)
             queue_main.append(queue_intern)
 
 def sort_queue(queue):
@@ -152,14 +157,20 @@ def get_codes(tree,queue_backup, cont,  binarys, image, lose_rate, mod_x, mod_y,
                 if image.mode == "RGB":
                     r, g, b = image.getpixel((i+mod_x*int(image.width/block_width),j+mod_y*int(image.height/block_heigh)))
                     binarys.append(tree.return_code(tree.root, r,g,b,lose_rate).code)
-                elif image.mode == "RGB":
+                elif image.mode == "RGBA":
                     r, g, b, a  = image.getpixel((i,j))
                     binarys.append(tree.return_code(tree.root, r,g,b,lose_rate).code)
     else:
-        r, g, b = image.getpixel((0+mod_x*int(image.width/block_width),0+mod_y*int(image.height/block_heigh)))
-        node = tree.return_code(tree.root, r,g,b,lose_rate)
-        code = node.code
-        binarys.append(code)
+        if image.mode == "RGB":
+                r, g, b = image.getpixel((0+mod_x*int(image.width/block_width),0+mod_y*int(image.height/block_heigh)))
+                node = tree.return_code(tree.root, r,g,b,lose_rate)
+                code = node.code
+                binarys.append(code)
+        elif image.mode == "RGBA":
+            r, g, b, a = image.getpixel((0+mod_x*int(image.width/block_width),0+mod_y*int(image.height/block_heigh)))
+            node = tree.return_code(tree.root, r,g,b,lose_rate)
+            code = node.code
+            binarys.append(code)
 
 
             
@@ -229,11 +240,12 @@ def write_bytes(file, tamanho, image, binarys, copy_queue,queue_order, block_wid
     file.close()
 
 def show_divisor(number):
-    divisor = ""
+    divisor = []
     for i in range(number//2 + 1):
         if number % (i+1) == 0:
-            divisor += str(i+1) + " "
-    print(divisor)
+            divisor.append(str(i+1))
+    divisor.append(number)
+    return(divisor)
 
 def comparar_listas(lista_1, lista_2):
     if len(lista_1) != len(lista_2):
@@ -260,11 +272,11 @@ def main():
     queue_backup = []
     binarys = []
     queue_order = []
-    lose_rate = int(input("entre com a taxa de perda"))
-    show_divisor(image.width)
-    block_width = int(input("digite a largura do bloco"))
-    show_divisor(image.height)
-    block_heigh = int(input("digite a altura do bloco"))
+    lose_rate = int(input("entre com a taxa de perda: "))
+    print(show_divisor(image.width))
+    block_width = int(input("digite a largura do bloco: "))
+    print(show_divisor(image.height))
+    block_heigh = int(input("digite a altura do bloco: "))
     ler_file_pt_1(image, lose_rate, queue_main, block_width, block_heigh)
     print("terminei de ler o arquivo")
     cont = 0
@@ -308,7 +320,7 @@ def main():
         tamanho.append(len(value))
     print("compactando")
     print(len(tamanho))
-    write_bytes(file, tamanho, image,binarys, copy_queue, queue_order, block_width, block_heigh)
+    write_bytes(file, tamanho, image, binarys, copy_queue, queue_order, block_width, block_heigh)
 main()
 
 #143 776
